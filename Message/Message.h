@@ -9,7 +9,7 @@ class Message
 {
     public:
 
-      String data;
+      unuion data;
       int command_type;
       uint8_t randomKey;
       void setMessage(String data,int command_type = 0){
