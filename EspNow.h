@@ -63,7 +63,6 @@ public:
 	{
 		msg->setMessage(data, com_type);
 		msg->create();
-		msg->display();
 		esp_now_send(peerAddress->getAddress(), (uint8_t *)msg, sizeof(*msg));
 	}
 };
