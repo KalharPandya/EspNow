@@ -1,8 +1,8 @@
 #include <Arduino.h>
 #ifdef ESP32
-  #include <WiFi.h>
+#include <WiFi.h>
 #else
-  #include <ESP8266WiFi.h>
+#include <ESP8266WiFi.h>
 #endif
 #include "MacAddress/MacAddress.h"
 #include <ArduinoJSON.h>
@@ -10,15 +10,17 @@
 #define MAX_PEERS 20
 int channel = 10, encrypt = 0;
 int peerIndex = 0;
-
+#define MAX_HANDLERS 15
 Mac macHelper;
 void onReceive(const uint8_t *mac, const uint8_t *data, int len);
 String recievedData;
 class Peer
 {
 public:
+	json handleType;
 	esp_now_peer_info_t *peer;
-	void (*dataRecieve)(json);
+	int handlerIndex = 0;
+	void (*dataRecieve[15])(json);
 	Mac *peerAddress = new Mac();
 	void init(String mac_addr)
 	{
@@ -52,22 +54,26 @@ public:
 	{
 		peer = new esp_now_peer_info_t();
 		memcpy(peer->peer_addr, peerAddress->getAddress(), 6);
-		peer->channel = channel;
-		peer->encrypt = encrypt;
 		// Register the peer
 		if (esp_now_add_peer(peer) == ESP_OK)
 		{
 			// Serial.println("Peer added");
 		}
 	}
-	void setOnRecieve(void (*f)(json))
+	void setOnRecieve(void (*f)(json), String type = "")
 	{
-		this->dataRecieve = f;
+		handleType.addUnit(type,handlerIndex);
+		this->dataRecieve[handlerIndex++] = f;
 	}
 	void send(json data)
 	{
 		String dataString = data.getString();
-		esp_now_send(peerAddress->getAddress(), (uint8_t *)dataString.c_str(), sizeof(dataString));
+		// dataString = "Hello";
+		const char *dataConst = dataString.c_str();
+		int dataSize = dataString.length() + 1;
+		char dataArray[dataSize];
+		memcpy(dataArray, dataConst, dataSize);
+		esp_now_send(peerAddress->getAddress(), (uint8_t *)dataArray, dataSize);
 	}
 };
 
@@ -87,10 +93,20 @@ Peer findPeer(String targetAddress)
 		}
 	}
 }
-
+json recievedJson;
+Peer dataFrom;
 void onReceive(const uint8_t *src, const uint8_t *data, int len)
 {
+	recievedJson.clear();
 	macHelper.copyConstantUint(src);
-	memcpy(&recievedData, data, sizeof(recievedData));
-	findPeer(macHelper.getStrAddress()).dataRecieve(parseJSON(recievedData));
+	recievedData = "";
+	for (int i = 0; i < len; i++)
+	{
+		recievedData += char(data[i]);
+	}
+	recievedJson = parseJSON(recievedData);
+	String type = recievedJson.getValue("type");
+	dataFrom = findPeer(macHelper.getStrAddress());
+	int typeIndex = dataFrom.handleType.getNumberValue(type);
+	dataFrom.dataRecieve[typeIndex](recievedJson);
 }

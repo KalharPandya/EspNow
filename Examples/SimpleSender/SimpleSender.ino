@@ -1,6 +1,5 @@
 #include <EspNow.h>
-String mac_addr = "2C:F4:32:15:61:9E";
-int command_type = 1;
+String mac_addr = "3C:61:05:30:8E:40";
 Peer myEsp;
 json data;
 void setup()
@@ -18,8 +17,9 @@ void loop()
   data.addUnit("Name", "Happy");
   data.addUnit("Age", "20");
   data.addUnit("CPI", "10");
+  data.addUnit("type", "success");
   myEsp.send(data);
-  delay(2000);
+  delay(200);
 }
 
 void your_function(json msg)
