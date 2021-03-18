@@ -1,23 +1,28 @@
 #include <Arduino.h>
+#ifdef ESP32
+  #include <WiFi.h>
+#else
+  #include <ESP8266WiFi.h>
+#endif
+#include "MacAddress/MacAddress.h"
+#include <ArduinoJSON.h>
 #include <esp_now.h>
-#include "Message/Message.h"
 #define MAX_PEERS 20
-int channel = 4, encrypt = 0;
-Message recievedData;
+int channel = 10, encrypt = 0;
 int peerIndex = 0;
+
+Mac macHelper;
 void onReceive(const uint8_t *mac, const uint8_t *data, int len);
+String recievedData;
 class Peer
 {
 public:
-	Message *msg;
 	esp_now_peer_info_t *peer;
-	String peerId="motor1";
-	void (*dataRecieve)(Message);
+	void (*dataRecieve)(json);
 	Mac *peerAddress = new Mac();
 	void init(String mac_addr)
 	{
 		this->peerAddress->setAddress(mac_addr);
-		msg = new Message();
 		if (peerIndex == 0)
 			InitESPNow();
 		addThisPeer();
@@ -30,11 +35,11 @@ public:
 		WiFi.disconnect();
 		if (esp_now_init() == ESP_OK)
 		{
-			// Serial.println("ESPNow Init Success");
+			Serial.println("ESPNow Init Success");
 		}
 		else
 		{
-			// Serial.println("ESPNow Init Failed");
+			Serial.println("ESPNow Init Failed");
 			// Retry InitESPNow, add a counte and then restart?
 			// InitESPNow();
 			// or Simply Restart
@@ -55,16 +60,14 @@ public:
 			// Serial.println("Peer added");
 		}
 	}
-	void setOnRecieve(void (*f)(Message))
+	void setOnRecieve(void (*f)(json))
 	{
 		this->dataRecieve = f;
 	}
-	void send(String data, int com_type)
+	void send(json data)
 	{
-		msg->setMessage(data, com_type);
-		msg->create();
-		msg->display();
-		esp_now_send(peerAddress->getAddress(), (uint8_t *)msg, sizeof(*msg));
+		String dataString = data.getString();
+		esp_now_send(peerAddress->getAddress(), (uint8_t *)dataString.c_str(), sizeof(dataString));
 	}
 };
 
@@ -89,5 +92,5 @@ void onReceive(const uint8_t *src, const uint8_t *data, int len)
 {
 	macHelper.copyConstantUint(src);
 	memcpy(&recievedData, data, sizeof(recievedData));
-	findPeer(macHelper.getStrAddress()).dataRecieve(recievedData);
+	findPeer(macHelper.getStrAddress()).dataRecieve(parseJSON(recievedData));
 }

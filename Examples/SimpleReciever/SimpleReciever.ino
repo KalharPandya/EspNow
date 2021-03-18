@@ -14,10 +14,7 @@ void loop() {
 }
 
 
-void your_function(Message msg) {
+void your_function(json msg) {
   //Message is the data recieved from Peer it contains data insidee it.
-  String data = msg.data;
-  int command_type = msg.command_type;
-  int random_key = msg.randomKey;
-  Serial.println("Data is : " + data + "\nCommand Type is : " + String(command_type) + "\nrandomKey is : " + String(random_key));
+  Serial.println("Data is : " + msg.getString());
 }
