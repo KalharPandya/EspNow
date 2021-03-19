@@ -22,9 +22,9 @@ public:
 	int handlerIndex = 0;
 	void (*dataRecieve[15])(json);
 	Mac *peerAddress = new Mac();
-	void init(String mac_addr)
+	void init(String id)
 	{
-		this->peerAddress->setAddress(mac_addr);
+		this->peerAddress->parseName(id);
 		if (peerIndex == 0)
 			InitESPNow();
 		addThisPeer();
@@ -114,5 +114,6 @@ void onReceive(const uint8_t *src, const uint8_t *data, int len)
 }
 
 void setId(String id){
-
+	macHelper.parseName(id);
+	esp_base_mac_addr_set(macHelper.getAddress());
 }

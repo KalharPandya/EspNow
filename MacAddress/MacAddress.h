@@ -100,10 +100,23 @@ public:
     }
 
     void copyConstantUint(const uint8_t *copy){
+        setAddress(copy);
+    }
+    void setAddress(const uint8_t *copy){
         for(int i = 0 ; i < 6 ; i ++){
             arr_address[i] = copy[i];
         }
     }
 
-    
+    void parseName(String name){
+        if(name.length()>6){
+            name = "" + name[0] + name[1] + name[2] + name[3] + name[4] + name[5];
+        }
+        while(name.length()<6){
+            name = "."+name;
+        }
+
+        setAddress((uint8_t * )name.c_str());
+
+    }
 };
