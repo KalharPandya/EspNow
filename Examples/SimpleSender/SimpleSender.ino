@@ -5,9 +5,8 @@ void setup()
 {
   // put your setup code here, to run once:
   Serial.begin(115200);
-  setId("myESP2");//MAX 6 chars
-  Serial.begin(115200);
-  myEsp.init("myESP1");            //register peer with mac_addr
+  setId("myESP2");//MAX 6 chars This is its own id
+  myEsp.init("myESP1");            //register peer with peer_id
   myEsp.setOnRecieve(your_function); //recevies data from other peer
 }
 

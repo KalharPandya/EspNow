@@ -2,8 +2,8 @@
 Peer myEsp;
 void setup() {
   Serial.begin(115200);
-  setId("myESP1");//MAX 6 chars
-  myEsp.init("myESP2");    
+  setId("myESP1");//MAX 6 chars This is its own id
+  myEsp.init("myESP2");  //  register peer with peer_id
   myEsp.setOnRecieve(defaultHandler);
   myEsp.setOnRecieve(error,"error");
   myEsp.setOnRecieve(success,"success");
