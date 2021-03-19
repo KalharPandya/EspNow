@@ -108,9 +108,11 @@ void onReceive(const uint8_t *src, const uint8_t *data, int len)
 	String type = recievedJson.getValue("type");
 	dataFrom = findPeer(macHelper.getStrAddress());
 	int typeIndex = dataFrom.handleType.getNumberValue(type);
+	typeIndex = typeIndex==-1?0:typeIndex;
+	// Serial.print("typeIndex"+ String(typeIndex));
 	dataFrom.dataRecieve[typeIndex](recievedJson);
 }
 
 void setId(String id){
-	
+
 }
