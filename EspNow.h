@@ -110,3 +110,7 @@ void onReceive(const uint8_t *src, const uint8_t *data, int len)
 	int typeIndex = dataFrom.handleType.getNumberValue(type);
 	dataFrom.dataRecieve[typeIndex](recievedJson);
 }
+
+void setId(String id){
+	
+}
