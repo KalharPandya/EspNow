@@ -1,10 +1,9 @@
 #include <EspNow.h>
-String mac_addr = "3C:61:05:31:27:5C";
 Peer myEsp;
 void setup() {
   Serial.begin(115200);
-  Serial.println(WiFi.macAddress());
-  myEsp.init(mac_addr);
+  setId("myESP1");//MAX 6 chars
+  myEsp.init("myESP2");    
   myEsp.setOnRecieve(defaultHandler);
   myEsp.setOnRecieve(error,"error");
   myEsp.setOnRecieve(success,"success");

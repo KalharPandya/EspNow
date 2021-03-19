@@ -1,13 +1,13 @@
 #include <EspNow.h>
-String mac_addr = "3C:61:05:30:8E:40";
 Peer myEsp;
 json data;
 void setup()
 {
   // put your setup code here, to run once:
   Serial.begin(115200);
-  Serial.println(WiFi.macAddress());
-  myEsp.init(mac_addr);              //register peer with mac_addr
+  setId("myESP2");//MAX 6 chars
+  Serial.begin(115200);
+  myEsp.init("myESP1");            //register peer with mac_addr
   myEsp.setOnRecieve(your_function); //recevies data from other peer
 }
 
