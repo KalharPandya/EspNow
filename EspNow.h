@@ -104,20 +104,21 @@ void onReceive(const uint8_t *src, const uint8_t *data, int len)
 	recievedJson.clear();
 	macHelper.copyConstantUint(src);
 	recievedData = "";
+	String type;
 	
 	for (int i = 0; i < len; i++)
 	{
 		recievedData += char(data[i]);
 	}
 	if(!isJsonString(recievedData)){
-		stringData.clear();
-		stringData.addUnit("type", "String");
-		stringData.addUnit("value", recievedData);
-		recievedJson = stringData;
+		recievedJson.clear();
+		recievedJson.addUnit("type", "String");
+		recievedJson.addUnit("value", recievedData);
+		type = "String";
 	}
 	else
 		recievedJson = parseJSON(recievedData);
-	String type = recievedJson.getValue("type");
+	type = recievedJson.getValue("type");
 	dataFrom = findPeer(macHelper.getStrAddress());
 	int typeIndex = dataFrom.handleType.getNumberValue(type);
 	typeIndex = typeIndex == -1 ? 0 : typeIndex;
