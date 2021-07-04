@@ -62,13 +62,16 @@ public:
 	}
 	void setOnRecieve(void (*f)(json), String type = "")
 	{
-		handleType.addUnit(type,handlerIndex);
+		handleType.addUnit(type, handlerIndex);
 		this->dataRecieve[handlerIndex++] = f;
 	}
 	void send(json data)
 	{
 		String dataString = data.getString();
-		// dataString = "Hello";
+		sendString(dataString);
+	}
+	void sendString(String dataString)
+	{
 		const char *dataConst = dataString.c_str();
 		int dataSize = dataString.length() + 1;
 		char dataArray[dataSize];
@@ -94,26 +97,36 @@ Peer findPeer(String targetAddress)
 	}
 }
 json recievedJson;
+json stringData;
 Peer dataFrom;
 void onReceive(const uint8_t *src, const uint8_t *data, int len)
 {
 	recievedJson.clear();
 	macHelper.copyConstantUint(src);
 	recievedData = "";
+	
 	for (int i = 0; i < len; i++)
 	{
 		recievedData += char(data[i]);
 	}
-	recievedJson = parseJSON(recievedData);
+	if(!isJsonString(recievedData)){
+		stringData.clear();
+		stringData.addUnit("type", "String");
+		stringData.addUnit("value", recievedData);
+		recievedJson = stringData;
+	}
+	else
+		recievedJson = parseJSON(recievedData);
 	String type = recievedJson.getValue("type");
 	dataFrom = findPeer(macHelper.getStrAddress());
 	int typeIndex = dataFrom.handleType.getNumberValue(type);
-	typeIndex = typeIndex==-1?0:typeIndex;
+	typeIndex = typeIndex == -1 ? 0 : typeIndex;
 	// Serial.print("typeIndex"+ String(typeIndex));
 	dataFrom.dataRecieve[typeIndex](recievedJson);
 }
 
-void setId(String id){
+void setId(String id)
+{
 	macHelper.parseName(id);
 	esp_base_mac_addr_set(macHelper.getAddress());
 }
