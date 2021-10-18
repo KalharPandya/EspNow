@@ -1,23 +1,30 @@
 #include <Arduino.h>
+#ifdef ESP32
+#include <WiFi.h>
+#else
+#include <ESP8266WiFi.h>
+#endif
+#include "MacAddress/MacAddress.h"
+#include <ArduinoJSON.h>
 #include <esp_now.h>
-#include "Message/Message.h"
 #define MAX_PEERS 20
-int channel = 4, encrypt = 0;
-Message recievedData;
+int channel = 10, encrypt = 0;
 int peerIndex = 0;
+#define MAX_HANDLERS 15
+Mac macHelper;
 void onReceive(const uint8_t *mac, const uint8_t *data, int len);
+String recievedData;
 class Peer
 {
 public:
-	Message *msg;
+	json handleType;
 	esp_now_peer_info_t *peer;
-	String peerId="motor1";
-	void (*dataRecieve)(Message);
+	int handlerIndex = 0;
+	void (*dataRecieve[15])(json);
 	Mac *peerAddress = new Mac();
-	void init(String mac_addr)
+	void init(String id)
 	{
-		this->peerAddress->setAddress(mac_addr);
-		msg = new Message();
+		this->peerAddress->parseName(id);
 		if (peerIndex == 0)
 			InitESPNow();
 		addThisPeer();
@@ -30,11 +37,11 @@ public:
 		WiFi.disconnect();
 		if (esp_now_init() == ESP_OK)
 		{
-			// Serial.println("ESPNow Init Success");
+			Serial.println("ESPNow Init Success");
 		}
 		else
 		{
-			// Serial.println("ESPNow Init Failed");
+			Serial.println("ESPNow Init Failed");
 			// Retry InitESPNow, add a counte and then restart?
 			// InitESPNow();
 			// or Simply Restart
@@ -47,23 +54,29 @@ public:
 	{
 		peer = new esp_now_peer_info_t();
 		memcpy(peer->peer_addr, peerAddress->getAddress(), 6);
-		peer->channel = channel;
-		peer->encrypt = encrypt;
 		// Register the peer
 		if (esp_now_add_peer(peer) == ESP_OK)
 		{
 			// Serial.println("Peer added");
 		}
 	}
-	void setOnRecieve(void (*f)(Message))
+	void setOnRecieve(void (*f)(json), String type = "")
 	{
-		this->dataRecieve = f;
+		handleType.addUnit(type, handlerIndex);
+		this->dataRecieve[handlerIndex++] = f;
 	}
-	void send(String data, int com_type)
+	void send(json data)
 	{
-		msg->setMessage(data, com_type);
-		msg->create();
-		esp_now_send(peerAddress->getAddress(), (uint8_t *)msg, sizeof(*msg));
+		String dataString = data.getString();
+		sendString(dataString);
+	}
+	void sendString(String dataString)
+	{
+		const char *dataConst = dataString.c_str();
+		int dataSize = dataString.length() + 1;
+		char dataArray[dataSize];
+		memcpy(dataArray, dataConst, dataSize);
+		esp_now_send(peerAddress->getAddress(), (uint8_t *)dataArray, dataSize);
 	}
 };
 
@@ -83,10 +96,38 @@ Peer findPeer(String targetAddress)
 		}
 	}
 }
-
+json recievedJson;
+json stringData;
+Peer dataFrom;
 void onReceive(const uint8_t *src, const uint8_t *data, int len)
 {
+	recievedJson.clear();
 	macHelper.copyConstantUint(src);
-	memcpy(&recievedData, data, sizeof(recievedData));
-	findPeer(macHelper.getStrAddress()).dataRecieve(recievedData);
+	recievedData = "";
+	String type;
+	
+	for (int i = 0; i < len; i++)
+	{
+		recievedData += char(data[i]);
+	}
+	if(!isJsonString(recievedData)){
+		recievedJson.clear();
+		recievedJson.addUnit("type", "String");
+		recievedJson.addUnit("value", recievedData);
+		type = "String";
+	}
+	else
+		recievedJson = parseJSON(recievedData);
+	type = recievedJson.getValue("type");
+	dataFrom = findPeer(macHelper.getStrAddress());
+	int typeIndex = dataFrom.handleType.getNumberValue(type);
+	typeIndex = typeIndex == -1 ? 0 : typeIndex;
+	// Serial.print("typeIndex"+ String(typeIndex));
+	dataFrom.dataRecieve[typeIndex](recievedJson);
+}
+
+void setId(String id)
+{
+	macHelper.parseName(id);
+	esp_base_mac_addr_set(macHelper.getAddress());
 }

@@ -1,23 +1,31 @@
-
-
 #include <EspNow.h>
-String mac_addr = "2C:F4:32:15:61:9E";
 Peer myEsp;
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(115200);
-  myEsp.init(mac_addr);
-  myEsp.setOnRecieve(your_function);//pass a function which will be called when data is recieved, 
+  setId("myESP1");//MAX 6 chars This is its own id
+  myEsp.init("myESP2");  //  register peer with peer_id
+  myEsp.setOnRecieve(defaultHandler);
+  myEsp.setOnRecieve(error,"error");
+  myEsp.setOnRecieve(success,"success");
+  myEsp.setOnRecieve(idk,"idk");
 }
 
 void loop() {
 }
 
 
-void your_function(Message msg) {
-  //Message is the data recieved from Peer it contains data insidee it.
-  String data = msg.data;
-  int command_type = msg.command_type;
-  int random_key = msg.randomKey;
-  Serial.println("Data is : " + data + "\nCommand Type is : " + String(command_type) + "\nrandomKey is : " + String(random_key));
+void success(json msg) {
+  Serial.println("Success is : " + msg.getString());
+  Serial.println(ESP.getFreeHeap());
+}
+void error(json msg) {
+  Serial.println("Error is : " + msg.getString());
+  Serial.println(ESP.getFreeHeap());
+}
+void defaultHandler(json msg) {
+  Serial.println("Default is : " + msg.getString());
+  Serial.println(ESP.getFreeHeap());
+}
+void idk(json msg) {
+  Serial.println("IDK!!!!!!!!!!!! is : " + msg.getString());
 }
