@@ -13,19 +13,18 @@ void setup() {
 void loop() {
 }
 
-
-void success(json msg) {
-  Serial.println("Success is : " + msg.getString());
+void success(JSONVar msg) {
+  Serial.println("Success is : " + JSON.stringify(msg));
   Serial.println(ESP.getFreeHeap());
 }
-void error(json msg) {
-  Serial.println("Error is : " + msg.getString());
+void error(JSONVar msg) {
+  Serial.println("Error is : " + JSON.stringify(msg));
   Serial.println(ESP.getFreeHeap());
 }
-void defaultHandler(json msg) {
-  Serial.println("Default is : " + msg.getString());
+void defaultHandler(JSONVar msg) {
+  Serial.println("Default is : " + JSON.stringify(msg));
   Serial.println(ESP.getFreeHeap());
 }
-void idk(json msg) {
-  Serial.println("IDK!!!!!!!!!!!! is : " + msg.getString());
+void idk(JSONVar msg) {
+  Serial.println("IDK!!!!!!!!!!!! is : " + JSON.stringify(msg));
 }

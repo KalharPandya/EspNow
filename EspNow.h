@@ -5,7 +5,7 @@
 #include <ESP8266WiFi.h>
 #endif
 #include "MacAddress/MacAddress.h"
-#include <ArduinoJSON.h>
+#include <Arduino_JSON.h>
 #include <esp_now.h>
 #define MAX_PEERS 20
 int channel = 10, encrypt = 0;
@@ -17,10 +17,10 @@ String recievedData;
 class Peer
 {
 public:
-	json handleType;
+	JSONVar handleType;
 	esp_now_peer_info_t *peer;
 	int handlerIndex = 0;
-	void (*dataRecieve[15])(json);
+	void (*dataRecieve[15])(JSONVar);
 	Mac *peerAddress = new Mac();
 	void init(String id)
 	{
@@ -60,14 +60,14 @@ public:
 			// Serial.println("Peer added");
 		}
 	}
-	void setOnRecieve(void (*f)(json), String type = "")
+	void setOnRecieve(void (*f)(JSONVar), String type = "")
 	{
-		handleType.addUnit(type, handlerIndex);
+		handleType[type] =handlerIndex;
 		this->dataRecieve[handlerIndex++] = f;
 	}
-	void send(json data)
+	void send(JSONVar data)
 	{
-		String dataString = data.getString();
+		String dataString = JSON.stringify(data);
 		sendString(dataString);
 	}
 	void sendString(String dataString)
@@ -96,12 +96,12 @@ Peer findPeer(String targetAddress)
 		}
 	}
 }
-json recievedJson;
-json stringData;
+JSONVar recievedJson;
+JSONVar stringData;
 Peer dataFrom;
 void onReceive(const uint8_t *src, const uint8_t *data, int len)
 {
-	recievedJson.clear();
+	recievedJson = JSONVar();
 	macHelper.copyConstantUint(src);
 	recievedData = "";
 	String type;
@@ -110,17 +110,17 @@ void onReceive(const uint8_t *src, const uint8_t *data, int len)
 	{
 		recievedData += char(data[i]);
 	}
-	if(!isJsonString(recievedData)){
-		recievedJson.clear();
-		recievedJson.addUnit("type", "String");
-		recievedJson.addUnit("value", recievedData);
+	
+	recievedJson = JSON.parse(recievedData);
+	if(JSON.typeof(recievedJson) == "undefined"){
+		recievedJson = JSONVar();
+		recievedJson["type"] =  "String";
+		recievedJson["value"] = recievedData;
 		type = "String";
 	}
-	else
-		recievedJson = parseJSON(recievedData);
-	type = recievedJson.getValue("type");
+	type = recievedJson["type"];
 	dataFrom = findPeer(macHelper.getStrAddress());
-	int typeIndex = dataFrom.handleType.getNumberValue(type);
+	int typeIndex = dataFrom.handleType[type];
 	typeIndex = typeIndex == -1 ? 0 : typeIndex;
 	// Serial.print("typeIndex"+ String(typeIndex));
 	dataFrom.dataRecieve[typeIndex](recievedJson);
