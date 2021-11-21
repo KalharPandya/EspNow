@@ -14,6 +14,11 @@ int peerIndex = 0;
 Mac macHelper;
 void onReceive(const uint8_t *mac, const uint8_t *data, int len);
 String recievedData;
+void defaultPrintHandlerESPNow(JSONVar msg)
+{
+	Serial.print(msg["data"]);
+	if(msg["newLine"])	Serial.println();
+}
 class Peer
 {
 public:
@@ -30,6 +35,8 @@ public:
 		addThisPeer();
 		createPeer();
 		esp_now_register_recv_cb(onReceive);
+		setOnRecieve(defaultPrintHandlerESPNow,"print");
+
 	}
 	void InitESPNow()
 	{
@@ -75,8 +82,20 @@ public:
 		const char *dataConst = dataString.c_str();
 		int dataSize = dataString.length() + 1;
 		char dataArray[dataSize];
-		memcpy(dataArray, dataConst, dataSize);
+		memcpy(dataArray, dataConst	, dataSize);
 		esp_now_send(peerAddress->getAddress(), (uint8_t *)dataArray, dataSize);
+	}
+	void println(String dataString)
+	{
+		print(dataString, true);
+	}
+	void print(String dataString, bool newLine = false)
+	{
+		JSONVar data;
+		data["data"]=dataString;
+		data["type"]="print";
+		data["newLine"] = newLine;
+		send(data);
 	}
 };
 
