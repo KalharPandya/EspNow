@@ -16,6 +16,13 @@ void onReceive(const uint8_t *mac, const uint8_t *data, int len);
 String recievedData;
 void defaultPrintHandlerESPNow(JSONVar msg)
 {
+	Serial.println("Data found");
+	Serial.print(msg["data"]);
+	if(msg["newLine"])	Serial.println();
+}
+void defaultPrintHandlerESPNow1(JSONVar msg)
+{
+	Serial.println("Data found 11111111111111");
 	Serial.print(msg["data"]);
 	if(msg["newLine"])	Serial.println();
 }
@@ -35,6 +42,7 @@ public:
 		addThisPeer();
 		createPeer();
 		esp_now_register_recv_cb(onReceive);
+		// setOnRecieve(defaultPrintHandlerESPNow1,"print");
 		setOnRecieve(defaultPrintHandlerESPNow,"print");
 
 	}
@@ -67,13 +75,14 @@ public:
 			// Serial.println("Peer added");
 		}
 	}
-	void setOnRecieve(void (*f)(JSONVar), String type = "")
+	void setOnRecieve(void (*f)(JSONVar), String type = "default")
 	{
 		handleType[type] =handlerIndex;
 		this->dataRecieve[handlerIndex++] = f;
 	}
 	void send(JSONVar data)
 	{
+		if(data["type"]== null)	data["type"] = "default";
 		String dataString = JSON.stringify(data);
 		sendString(dataString);
 	}
@@ -131,6 +140,7 @@ void onReceive(const uint8_t *src, const uint8_t *data, int len)
 	}
 	
 	recievedJson = JSON.parse(recievedData);
+	
 	if(JSON.typeof(recievedJson) == "undefined"){
 		recievedJson = JSONVar();
 		recievedJson["type"] =  "String";
@@ -139,9 +149,8 @@ void onReceive(const uint8_t *src, const uint8_t *data, int len)
 	}
 	type = recievedJson["type"];
 	dataFrom = findPeer(macHelper.getStrAddress());
-	int typeIndex = dataFrom.handleType[type];
-	typeIndex = typeIndex == -1 ? 0 : typeIndex;
-	// Serial.print("typeIndex"+ String(typeIndex));
+	int typeIndex = dataFrom.handleType.hasOwnProperty(type)?dataFrom.handleType[type]:dataFrom.handleType["default"];
+
 	dataFrom.dataRecieve[typeIndex](recievedJson);
 }
 
